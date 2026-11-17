@@ -6682,11 +6682,11 @@ body {
       }
 
       & [data-jm] {
-        width: 1px;
+        /* A full-width base avoids amplifying pixel snapping at fractional zoom. */
+        width: calc(var(--jm) * 1px);
         height: 100%;
         transform-origin: 0 0;
         translate: calc(var(--jx) + var(--r)) 0;
-        scale: var(--jm) 1;
         background: var(--pane-join-fill);
       }
       & [data-jm]::after {

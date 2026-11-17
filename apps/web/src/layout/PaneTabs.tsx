@@ -352,9 +352,10 @@ function moveJoin(
   entry.shown = to;
   join.hidden = false;
   const middle = (width: number) => Math.max(0, width - 2 * PANE_JOIN_RADIUS_PX);
+  const toMiddle = middle(to.w);
   join.style.setProperty("--jx", `${to.x}px`);
   join.style.setProperty("--jw", `${to.w}px`);
-  join.style.setProperty("--jm", String(middle(to.w)));
+  join.style.setProperty("--jm", String(toMiddle));
   markJoinAtStart(entry);
   const land = () => {
     entry.slide = null;
@@ -392,8 +393,8 @@ function moveJoin(
   );
   const slide = piece("[data-jm]")?.animate(
     [
-      { translate: `${from.x + r}px 0`, scale: `${middle(from.w)} 1` },
-      { translate: `${to.x + r}px 0`, scale: `${middle(to.w)} 1` },
+      { translate: `${from.x + r}px 0`, scale: `${middle(from.w) / Math.max(1, toMiddle)} 1` },
+      { translate: `${to.x + r}px 0`, scale: "1 1" },
     ],
     timing,
   );

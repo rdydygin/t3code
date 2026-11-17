@@ -30,10 +30,10 @@ export function IssueDetailGhost({ seed }: { seed?: IssueListEntry | null }) {
         <>
           <PullRequestDetailTitleRow className="gap-2">
             <IssueStateGlyph state={seed.state} />
-            <span className="shrink-0 font-mono text-xs text-muted-foreground">
+            <span className="shrink-0 font-mono text-caption text-muted-foreground">
               {seed.displayKey}
             </span>
-            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-caption text-muted-foreground">
               <tracker.Icon aria-hidden className="mr-1 inline size-3 align-[-2px]" />
               {seed.scope}
             </span>
@@ -47,21 +47,21 @@ export function IssueDetailGhost({ seed }: { seed?: IssueListEntry | null }) {
             </Button>
           </PullRequestDetailTitleRow>
           {/* Leaves room for the edit button, so the title wraps the same once loaded. */}
-          <h2 className="pr-7 text-base font-semibold leading-snug">{seed.title}</h2>
-          <PullRequestMetaLine className="text-xs text-muted-foreground">
+          <h2 className="pr-7 text-title leading-snug">{seed.title}</h2>
+          <PullRequestMetaLine className="text-caption text-muted-foreground">
             <PullRequestActorLabel actor={seed.author} />
             <span>opened {formatRelativeTimeLabel(seed.createdAt)}</span>
             {seed.closedAt ? <span>closed {formatRelativeTimeLabel(seed.closedAt)}</span> : null}
           </PullRequestMetaLine>
           {/* Both rows hold the height of the picker button the loaded panel puts in them. */}
-          <div className="flex min-h-6 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex min-h-6 flex-wrap items-center gap-1.5 text-caption text-muted-foreground">
             <span className="shrink-0">Labels</span>
             {seed.labels.length === 0 ? <span>none</span> : null}
             {seed.labels.map((label) => (
               <PullRequestLabelChip key={label.name} label={label} />
             ))}
           </div>
-          <div className="flex min-h-6 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex min-h-6 flex-wrap items-center gap-1.5 text-caption text-muted-foreground">
             <span className="shrink-0">Assignees</span>
             {seed.assignees.length === 0 ? <span>none</span> : null}
             {seed.assignees.map((actor) => (

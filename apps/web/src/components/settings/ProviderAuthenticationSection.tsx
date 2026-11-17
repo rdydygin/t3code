@@ -203,7 +203,12 @@ export function ProviderAuthenticationSection({
               disabled={disabled}
               onValueChange={(value) => setMethodId(value ?? "")}
             >
-              <SelectTrigger size="sm" aria-label="Sign-in method" className="w-44">
+              <SelectTrigger
+                variant="well"
+                size="compact"
+                aria-label="Sign-in method"
+                className="w-44"
+              >
                 <SelectValue>
                   {auth?.methods?.find((method) => method.id === methodId)?.name ??
                     "Provider default"}
@@ -223,7 +228,7 @@ export function ProviderAuthenticationSection({
             <>
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={disabled}
                 onClick={() => void openBrowser()}
               >
@@ -260,7 +265,7 @@ export function ProviderAuthenticationSection({
             {needsExternalSetup && provider.setup?.documentationUrl ? (
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 render={
                   <a href={provider.setup.documentationUrl} target="_blank" rel="noreferrer" />
                 }
@@ -284,7 +289,7 @@ export function ProviderAuthenticationSection({
             ) : !active && !needsExternalSetup && provider.setup?.canAuthenticate !== false ? (
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={disabled || !provider.enabled || !provider.installed || !auth}
                 onClick={() =>
                   void run(() =>
@@ -428,7 +433,7 @@ export function ProviderAuthenticationSection({
               <Button
                 type="submit"
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 className="w-fit"
                 disabled={disabled}
               >
@@ -468,7 +473,7 @@ export function ProviderAuthenticationSection({
               <Button
                 type="submit"
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 className="w-fit"
                 disabled={disabled || !values.callback?.trim()}
               >

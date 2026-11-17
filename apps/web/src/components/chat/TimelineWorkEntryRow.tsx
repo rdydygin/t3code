@@ -1,5 +1,27 @@
+import {
+  THINKING_PREVIEW_PLUGINS,
+  THOUGHT_PREVIEW_PLUGINS,
+  THOUGHT_PREVIEW_SOURCE_MAX_LENGTH,
+} from "./TimelineWorkEntryRow.logic";
 import { TimelinePendingApprovalRow } from "./TimelinePendingApprovalRow";
-import { WorkLogDetails, WorkLogRow } from "./WorkLog";
+import { MESSAGE_HEADING_LEVEL } from "./TimelineRowParts";
+import {
+  TimelineRowActivityCtx,
+  TimelineRowCtx,
+  type TimelineWorkEntry,
+  WorkGroupViewCtx,
+} from "./timelineRowContext";
+import {
+  ToolActivityIconView,
+  failedToolIconClassName,
+  toolIconAcceptsTint,
+} from "./TimelineToolActivityIcon";
+import {
+  buildToolCallExpandedBody,
+  workEntryIconName,
+  workToneIcon,
+} from "./TimelineWorkEntryRow.logic";
+import { WORK_LOG_OUTPUT_CLASS_NAME, WorkLogDetails, WorkLogRow } from "./WorkLog";
 import {
   getQuestionAnswerPreview,
   getQuestionAnswerText,
@@ -15,14 +37,10 @@ import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { Link } from "@tanstack/react-router";
 import { notificationChildThreadId } from "@t3tools/client-runtime/state/thread-execution";
 import {
-  resolveViewedImageAsset,
   toolGroupAction,
   workEntryViewedImagePath,
 } from "@t3tools/client-runtime/work-log/presentation";
-import {
-  turnItemHasDetail,
-  turnItemNeedsDetailFetch,
-} from "@t3tools/client-runtime/work-log/item-detail";
+import { turnItemNeedsDetailFetch } from "@t3tools/client-runtime/work-log/item-detail";
 import { claudeSkillInvocation } from "@t3tools/shared/toolActivity";
 import { memo, use, useState, type KeyboardEvent } from "react";
 import {
@@ -31,13 +49,13 @@ import {
   workLogEntryIsToolLike,
 } from "../../session-logic";
 import ChatMarkdown from "../ChatMarkdown";
-import { ChatMarkdownAssetImage } from "./ChatMarkdownMedia";
 import type { ExpandedImagePreview } from "./ExpandedImagePreview";
 import { workGroupImageGallery } from "./markdownImageGallery";
-import { ChevronRightIcon, CircleAlertIcon, XIcon, RotateCcwIcon } from "lucide-react";
+import { CircleAlertIcon, XIcon, RotateCcwIcon } from "lucide-react";
 import { Button, InlineButton } from "../ui/button";
 import { useAssetUrls } from "../../assets/assetUrls";
 import { useThreadShell } from "../../state/entities";
+import { RunningFor } from "./RunningFor";
 import {
   threadReadLabelPrefix,
   threadReadTargetId,
@@ -47,30 +65,8 @@ import {
 } from "./MessagesTimeline.logic";
 import { cn } from "~/lib/utils";
 import { formatUpcomingTimestamp } from "../../timestampFormat";
-import { FetchedToolOutput, V2ItemInspector } from "./V2ItemInspector";
+import { FetchedToolOutput, V2ItemInspector, v2ItemInspectorHasContent } from "./V2ItemInspector";
 import { SubagentNotificationLink } from "./V2LifecycleRow";
-import {
-  TimelineRowCtx,
-  TimelineRowActivityCtx,
-  WorkGroupViewCtx,
-  type TimelineRow,
-  type TimelineWorkEntry,
-} from "./timelineRowContext";
-import { MESSAGE_HEADING_LEVEL, TimelineRowTimestamp } from "./TimelineRowParts";
-import {
-  failedToolIconClassName,
-  toolIconAcceptsTint,
-  ToolActivityIconView,
-} from "./TimelineToolActivityIcon";
-import {
-  workToneIcon,
-  workEntryRawCommand,
-  buildToolCallExpandedBody,
-  workEntryIconName,
-  THINKING_PREVIEW_PLUGINS,
-  THOUGHT_PREVIEW_PLUGINS,
-  THOUGHT_PREVIEW_SOURCE_MAX_LENGTH,
-} from "./TimelineWorkEntryRow.logic";
 
 export function useThreadReadTarget(entry: TimelineWorkEntry, environmentId: EnvironmentId) {
   const rawThreadId = threadReadTargetId(entry);
@@ -115,9 +111,6 @@ export function ThreadReadLabel({
   );
 }
 
-const toolCallExpandedBodyClassName =
-  "max-h-64 cursor-text overflow-auto whitespace-pre-wrap break-words font-mono text-secondary-label text-(length:--font-size-code,var(--text-2xs)) leading-relaxed select-text";
-
 const stopRowToggle = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 export function ReasoningTraceContent({ entries }: { entries: ReadonlyArray<TimelineWorkEntry> }) {
@@ -150,8 +143,11 @@ type WorkEntryRowProps = {
   workEntry: TimelineWorkEntry;
   workspaceRoot: string | undefined;
   displayLabel?: string | undefined;
+  expandable?: boolean;
   onToggleEntry?: ((collapsed: boolean) => void) | undefined;
   onContentReady?: (() => void) | undefined;
+  /** A failed test run reads in the error tone, keeping its own tool icon. */
+  severeFailure?: boolean | undefined;
 };
 
 export const SimpleWorkEntryRow = memo(function SimpleWorkEntryRow(props: WorkEntryRowProps) {
@@ -176,41 +172,16 @@ export const SimpleWorkEntryRow = memo(function SimpleWorkEntryRow(props: WorkEn
   );
 });
 
-export function ViewedImagesTimelineRow({
-  row,
-}: {
-  row: Extract<TimelineRow, { kind: "viewed-images" }>;
-}) {
-  const { threadRef, workspaceRoot, onImageExpand } = use(TimelineRowCtx);
-  if (!threadRef) return null;
-  return (
-    <div className="flex flex-wrap items-start gap-2 px-0.5" data-image-gallery>
-      {row.paths.map((path) => {
-        const image = resolveViewedImageAsset(path, {
-          threadId: threadRef.threadId,
-          workspaceRoot,
-        });
-        return image ? (
-          <ChatMarkdownAssetImage
-            key={path}
-            environmentId={threadRef.environmentId}
-            resource={image.resource}
-            alt={image.alt}
-            srcFragment={image.srcFragment}
-            workspaceRoot={workspaceRoot}
-            maxHeightRem={10}
-            onImageExpand={onImageExpand}
-          />
-        ) : null;
-      })}
-    </div>
-  );
-}
-
 function WorkEntryLogRow(props: WorkEntryRowProps) {
-  const { workEntry, workspaceRoot, displayLabel } = props;
+  const {
+    workEntry,
+    workspaceRoot,
+    displayLabel,
+    expandable = true,
+    severeFailure = false,
+  } = props;
   const ctx = use(TimelineRowCtx);
-  const { threadRef, onImageExpand, timestampFormat } = ctx;
+  const { onImageExpand, timestampFormat } = ctx;
   const { retryableWorkspacePreparationRunIds, onRetryWorkspacePreparation } = ctx;
   const threadTarget = useThreadReadTarget(workEntry, ctx.activeThreadEnvironmentId);
   const createdThread =
@@ -271,35 +242,31 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
         wrapLabel
         icon={
           <CircleAlertIcon
-            className={cn("size-4", warning ? "text-warning" : "text-destructive")}
+            className={cn("size-4", warning ? "text-warning-foreground" : "text-destructive")}
           />
         }
         label={
           <span
-            className={cn("text-sm font-medium", warning ? "text-warning" : "text-destructive")}
+            className={cn(
+              "text-sm font-medium",
+              warning ? "text-warning-foreground" : "text-destructive",
+            )}
           >
             {label}
           </span>
         }
-        trailing={
-          <TimelineRowTimestamp
-            createdAt={workEntry.createdAt}
-            timestampFormat={timestampFormat}
-            alwaysVisible
-          />
-        }
       >
         {!warning ? (
-          <p className="ms-7 whitespace-pre-wrap break-words py-1 text-sm leading-relaxed text-foreground/80">
+          <p className="ms-7.5 whitespace-pre-wrap break-words py-1 text-sm leading-relaxed text-foreground">
             {failureItem.failure.message}
           </p>
         ) : null}
         {retryRunId !== null && onRetryWorkspacePreparation ? (
-          <div className="ms-7 pb-1">
+          <div className="ms-7.5 pb-1">
             <Button
               type="button"
               size="xs"
-              variant="outline"
+              variant="secondary"
               onClick={() => onRetryWorkspacePreparation(retryRunId)}
             >
               <RotateCcwIcon aria-hidden />
@@ -317,13 +284,14 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
   const showDestructiveRowStyle =
     !showWarningIndicator &&
     showFailedIndicator &&
-    (workEntrySignalsSevereFailure(workEntry) || !workLogEntryIsToolLike(workEntry));
-  const entryIconName =
-    showWarningIndicator || showDestructiveRowStyle ? "circle-alert" : workEntryIconName(workEntry);
-  const entryToolIcon =
-    showWarningIndicator || showDestructiveRowStyle
-      ? undefined
-      : (workEntry.toolIcon ?? workEntry.toolSource?.icon);
+    (severeFailure ||
+      workEntrySignalsSevereFailure(workEntry) ||
+      !workLogEntryIsToolLike(workEntry));
+  const replacesIcon = showWarningIndicator || (showDestructiveRowStyle && !severeFailure);
+  const entryIconName = replacesIcon ? "circle-alert" : workEntryIconName(workEntry);
+  const entryToolIcon = replacesIcon
+    ? undefined
+    : (workEntry.toolIcon ?? workEntry.toolSource?.icon);
   const isReasoning = workEntry.itemType === "reasoning";
   const questionHeading = workEntry.questionAnswer
     ? getQuestionTextPreview(workEntry.questionAnswer)
@@ -334,11 +302,16 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
         ? "Thinking"
         : "Thought"
       : questionHeading || (displayLabel ?? workEntryDisplayLabel(workEntry, workspaceRoot));
+  const editItem = workEntry.projectedItem?.item ?? workEntry.structuredPayload;
+  const editCounts =
+    editItem?.type === "file_change" &&
+    (editItem.additions !== undefined || editItem.deletions !== undefined)
+      ? { additions: editItem.additions ?? 0, deletions: editItem.deletions ?? 0 }
+      : null;
   const answerPreview =
     workEntry.questionAnswer && hasQuestionAnswer(workEntry.questionAnswer)
       ? getQuestionAnswerPreview(workEntry.questionAnswer)
       : null;
-  const viewedImagePath = workEntryViewedImagePath(workEntry);
   const payload = workEntry.structuredPayload;
   const skill =
     payload?.type === "dynamic_tool"
@@ -350,68 +323,51 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
       : skill
         ? (skill.args ?? null)
         : undefined;
-  const viewedImage =
-    viewedImagePath && threadRef
-      ? resolveViewedImageAsset(viewedImagePath, {
-          threadId: threadRef.threadId,
-          workspaceRoot,
-        })
-      : null;
   const groupViewedImages = groupView?.viewedImages;
   // Images in this entry's expanded body page through the group's viewed images, like its strip.
-  const expandImage =
-    viewedImage && groupViewedImages
-      ? (preview: ExpandedImagePreview) =>
-          onImageExpand(workGroupImageGallery(groupViewedImages, viewedImagePath, preview))
-      : onImageExpand;
-  const canExpand =
-    previewText.trim().length > 0 ||
-    (workEntry.itemType === "dynamic_tool" && workEntry.toolData !== undefined) ||
-    Boolean(
-      workEntryRawCommand(workEntry) ||
-      workEntry.command?.trim() ||
-      workEntry.detail?.trim() ||
-      workEntry.changedFiles?.length ||
-      viewedImage,
-    );
+  const expandImage = groupViewedImages
+    ? (preview: ExpandedImagePreview) =>
+        onImageExpand(
+          workGroupImageGallery(groupViewedImages, workEntryViewedImagePath(workEntry), preview),
+        )
+    : onImageExpand;
+  const inspectedItem =
+    plainOutput === undefined &&
+    workEntry.projectedItem &&
+    v2ItemInspectorHasContent(workEntry.projectedItem.item)
+      ? workEntry.projectedItem
+      : undefined;
+  // Check the body before offering a disclosure, including for non-projected entries.
   const expandedBody =
-    expanded && !isReasoning
+    (expanded || !inspectedItem) && !isReasoning
       ? plainOutput !== undefined
         ? plainOutput
-        : buildToolCallExpandedBody(
-            workEntry,
-            workspaceRoot,
-            previewText,
-            viewedImage ? viewedImagePath : null,
-          )
+        : buildToolCallExpandedBody(workEntry, workspaceRoot, previewText)
       : null;
   const plainOutputFetches =
     plainOutput !== undefined &&
     workEntry.projectedItem !== undefined &&
     turnItemNeedsDetailFetch(workEntry.projectedItem.item);
   const canExpandProjectedItem =
-    plainOutput !== undefined
-      ? Boolean(plainOutput || viewedImage || workEntry.questionAnswer || plainOutputFetches)
-      : workEntry.projectedItem === undefined
-        ? canExpand
-        : isReasoning
-          ? Boolean(workEntry.detail?.trim())
-          : Boolean(
-              viewedImage ||
-              workEntry.questionAnswer ||
-              turnItemHasDetail(workEntry.projectedItem.item),
-            );
+    expandable &&
+    Boolean(
+      expandedBody ||
+      inspectedItem ||
+      workEntry.questionAnswer ||
+      plainOutputFetches ||
+      (isReasoning && workEntry.detail?.trim()),
+    );
   const iconWrapperClass = cn(
-    "flex size-4 items-center justify-center",
+    "flex size-3.5 items-center justify-center",
     showWarningIndicator
-      ? "text-warning"
+      ? "text-warning-foreground"
       : showDestructiveRowStyle
-        ? "text-destructive"
+        ? "text-error-foreground"
         : showFailedIndicator
           ? failedToolIconClassName
-          : workEntry.tone === "tool"
-            ? "text-icon-muted"
-            : iconConfig.className,
+          : workEntry.tone === "error"
+            ? iconConfig.className
+            : "text-dim-foreground",
   );
   const headingClass = showWarningIndicator
     ? "font-medium text-warning"
@@ -421,9 +377,12 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
         ? "text-secondary-label"
         : "text-foreground/80";
   const threadLabel = isReasoning ? null : threadReadLabel(previewText, threadTarget);
-  const accessiblePreview = [threadLabel?.text ?? previewText, answerPreview]
+  const accessiblePreview = [
+    [threadLabel?.text ?? previewText, answerPreview].filter(Boolean).join(": "),
+    editCounts ? `${editCounts.additions} additions, ${editCounts.deletions} deletions` : null,
+  ]
     .filter(Boolean)
-    .join(": ");
+    .join(", ");
   const accessibleDisplayText = showFailedIndicator
     ? `${accessiblePreview}, tool call failed`
     : accessiblePreview;
@@ -458,16 +417,20 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
           <ToolActivityIconView
             icon={entryToolIcon}
             fallbackName={entryIconName}
-            className="block size-4 shrink-0 stroke-2"
+            className="block size-3.5 shrink-0 stroke-2"
             muted
           />
         </span>
       }
       label={
         <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="flex min-w-0 w-full items-baseline gap-1.5 text-sm leading-relaxed">
+          <p className="flex min-w-0 w-full items-baseline gap-1.25 text-body">
             <span
-              className={cn(answerPreview ? "min-w-0" : "min-w-0 flex-1", "truncate", headingClass)}
+              className={cn(
+                answerPreview || editCounts ? "min-w-0" : "min-w-0 flex-1",
+                "truncate",
+                headingClass,
+              )}
             >
               {isReasoning && !expanded ? (
                 <ChatMarkdown
@@ -493,7 +456,23 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
               ) : (
                 previewText
               )}
+              {workEntry.itemType === "command_execution" &&
+              workEntry.command?.trim() &&
+              workEntry.toolLifecycleStatus === "inProgress" ? (
+                <RunningFor
+                  startedAt={workEntry.createdAt}
+                  environmentId={ctx.activeThreadEnvironmentId}
+                />
+              ) : null}
             </span>
+            {editCounts ? (
+              <span
+                aria-hidden
+                className="shrink-0 font-sans text-body text-dim-foreground tabular-nums"
+              >
+                +{editCounts.additions} −{editCounts.deletions}
+              </span>
+            ) : null}
             {answerPreview ? (
               <span
                 className={cn(
@@ -544,33 +523,10 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
           !toolIconAcceptsTint(entryToolIcon) ? (
             <XIcon aria-hidden className={cn("size-3 shrink-0", failedToolIconClassName)} />
           ) : null}
-          {canExpandProjectedItem ? (
-            <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden>
-              <ChevronRightIcon
-                className={cn(
-                  "size-3 shrink-0 text-icon-muted opacity-70 transition-transform duration-200",
-                  expanded && "rotate-90",
-                )}
-              />
-            </span>
-          ) : null}
-          <TimelineRowTimestamp createdAt={workEntry.createdAt} timestampFormat={timestampFormat} />
+          {canExpandProjectedItem ? <span aria-hidden className="size-3 shrink-0" /> : null}
         </>
       }
     >
-      {expanded && viewedImage && threadRef ? (
-        <WorkLogDetails kind="media">
-          <ChatMarkdownAssetImage
-            environmentId={threadRef.environmentId}
-            resource={viewedImage.resource}
-            alt={viewedImage.alt}
-            srcFragment={viewedImage.srcFragment}
-            workspaceRoot={workspaceRoot}
-            maxHeightRem={16}
-            onImageExpand={expandImage}
-          />
-        </WorkLogDetails>
-      ) : null}
       {expanded && workEntry.questionAnswer ? (
         <QuestionAnswerHistory answer={workEntry.questionAnswer} />
       ) : null}
@@ -579,14 +535,12 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
       !isReasoning &&
       !workEntry.questionAnswer &&
       canExpandProjectedItem &&
-      (expandedBody ||
-        plainOutputFetches ||
-        (workEntry.projectedItem && plainOutput === undefined)) ? (
+      (expandedBody || inspectedItem || plainOutputFetches) ? (
         <WorkLogDetails kind="panel">
-          {workEntry.projectedItem && plainOutput === undefined ? (
+          {inspectedItem ? (
             <V2ItemInspector
               onInitialOutputReady={onInitialOutputReady}
-              projectedItem={workEntry.projectedItem}
+              projectedItem={inspectedItem}
               environmentId={ctx.activeThreadEnvironmentId}
               cwd={ctx.markdownCwd}
               workspaceRoot={workspaceRoot}
@@ -597,7 +551,7 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
           ) : (
             <>
               {expandedBody ? (
-                <pre className={toolCallExpandedBodyClassName}>{expandedBody}</pre>
+                <pre className={WORK_LOG_OUTPUT_CLASS_NAME}>{expandedBody}</pre>
               ) : null}
               {plainOutputFetches && workEntry.projectedItem ? (
                 <FetchedToolOutput
@@ -606,6 +560,7 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
                   environmentId={ctx.activeThreadEnvironmentId}
                   onImageExpand={expandImage}
                   source={ctx.turnItemSource}
+                  showImages={toolGroupAction(workEntry) !== "read"}
                 />
               ) : null}
             </>
@@ -615,6 +570,8 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
     </WorkLogRow>
   );
 }
+
+const questionAnswerTextSizeClassName = "text-sm";
 
 function QuestionAnswerHistory({
   answer,
@@ -629,7 +586,7 @@ function QuestionAnswerHistory({
   }));
   const urls = useAssetUrls(activeThreadEnvironmentId, resources);
   return (
-    <div className="ms-7 mt-2 space-y-2" onClick={stopRowToggle}>
+    <div className="ms-7.5 mt-2 space-y-2" onClick={stopRowToggle}>
       {[
         ...new Set([
           ...Object.keys(answer.questionTextById ?? {}),
@@ -639,12 +596,22 @@ function QuestionAnswerHistory({
       ].map((questionId) => (
         <div key={questionId} className="space-y-1">
           {answer.questionTextById?.[questionId] ? (
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+            <p
+              className={cn(
+                questionAnswerTextSizeClassName,
+                "whitespace-pre-wrap text-muted-foreground",
+              )}
+            >
               {answer.questionTextById[questionId]}
             </p>
           ) : null}
           {getQuestionAnswerText(answer.answers[questionId]) ? (
-            <p className="ms-3 whitespace-pre-wrap text-sm text-muted-foreground">
+            <p
+              className={cn(
+                questionAnswerTextSizeClassName,
+                "ms-3 whitespace-pre-wrap text-muted-foreground",
+              )}
+            >
               {getQuestionAnswerText(answer.answers[questionId])}
             </p>
           ) : null}
@@ -657,7 +624,7 @@ function QuestionAnswerHistory({
                   href={url ?? undefined}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm underline"
+                  className={cn(questionAnswerTextSizeClassName, "underline")}
                 >
                   {attachment.type === "image" && url ? (
                     <img

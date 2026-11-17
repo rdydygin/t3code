@@ -1,9 +1,8 @@
 import { PlusIcon, XIcon } from "lucide-react";
-import { useState, type SetStateAction } from "react";
+import { useId, useState, type SetStateAction } from "react";
 import type { ProviderDriverKind, ServerProviderModel } from "@t3tools/contracts";
 import type { CustomModelDefinition } from "@t3tools/shared/model";
 
-import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../ui/select";
@@ -45,6 +44,7 @@ export function CustomModelEditor({
   onCancel,
   onDraftChange,
 }: CustomModelEditorProps) {
+  const editorId = useId();
   const [draft, setDraft] = useState<CustomModelDraft>(() => draftFromDefinition(entry));
   const [error, setError] = useState<string | null>(null);
   const updateDraft = (next: SetStateAction<CustomModelDraft>) => {
@@ -55,7 +55,8 @@ export function CustomModelEditor({
   const startFromCandidates = builtInModels.filter(
     (model) => (model.capabilities?.optionDescriptors?.length ?? 0) > 0,
   );
-  const domId = (suffix: string) => `provider-instance-${instanceId}-custom-model-${suffix}`;
+  const domId = (suffix: string) =>
+    `provider-instance-${instanceId}-custom-model-${editorId}-${suffix}`;
 
   const updateDescriptor = (key: string, patch: Partial<EditorDescriptor>) => {
     setError(null);
@@ -187,10 +188,7 @@ export function CustomModelEditor({
   );
 
   const renderDescriptor = (descriptor: EditorDescriptor, index: number) => (
-    <div
-      key={descriptor.key}
-      className="flex flex-col gap-2 rounded-md border border-border/60 bg-background/40 p-2.5"
-    >
+    <div key={descriptor.key} className="flex flex-col gap-2 rounded-control surface-well p-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="w-14 shrink-0 text-2xs text-muted-foreground">Option {index + 1}</span>
         {presets.length > 0 ? (
@@ -283,7 +281,7 @@ export function CustomModelEditor({
 
   return (
     <div
-      className="mx-2 mt-1 mb-2 flex flex-col gap-3 rounded-md border border-border bg-muted/20 p-3"
+      className="mx-2 mt-1 mb-2 flex flex-col gap-3 rounded-card border border-transparent surface-card-settings p-3"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -330,7 +328,7 @@ export function CustomModelEditor({
           ) : null}
         </div>
         {draft.descriptors.length === 0 ? (
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-dim-foreground">
             No custom options. The composer uses the provider's default options.
           </p>
         ) : null}
@@ -346,7 +344,7 @@ export function CustomModelEditor({
                 type="button"
                 size="xs"
                 variant="ghost-muted"
-                className={cn("-ml-2 first:ml-0")}
+                className="-ml-2 first:ml-0"
                 onClick={() => addDescriptor(descriptorFromPreset(preset))}
               >
                 <PlusIcon className="size-3" />
@@ -368,7 +366,7 @@ export function CustomModelEditor({
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={handleSave}>
+        <Button size="sm" variant="secondary" onClick={handleSave}>
           Save
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>

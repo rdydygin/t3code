@@ -13,9 +13,15 @@ vi.mock(import("../../state/session"), async (original) => ({
     new Set(environments.map(({ environmentId }) => environmentId))) as never,
   readEnvironmentScope: () => true,
 }));
+const { runCommand } = vi.hoisted(() => ({ runCommand: vi.fn() }));
+
+function setup() {
+  runCommand.mockReset();
+}
+
 vi.mock(import("../../state/use-atom-command"), async (original) => ({
   ...(await original()),
-  useAtomCommand: vi.fn(() => vi.fn()) as never,
+  useAtomCommand: vi.fn(() => runCommand) as never,
 }));
 vi.mock(import("./SettingsScopeContext"), async (original) => ({
   ...(await original()),
@@ -51,8 +57,8 @@ async function activate(locator: Locator, action: "click" | "focus") {
   (locator.element() as HTMLElement)[action]();
 }
 
-const existingField = page.getByRole("textbox", { name: "Keybinding for Sidebar: Toggle" });
-const existingPill = page.getByRole("button", { name: /^Edit shortcut for Sidebar: Toggle:/ });
+const existingField = page.getByRole("textbox", { name: "Keybinding for Toggle sidebar" });
+const existingPill = page.getByRole("button", { name: /^Edit shortcut for Toggle sidebar:/ });
 const newField = page.getByRole("textbox", { name: "Keybinding for new keybinding" });
 
 describe("Esc in a shortcut recorder", () => {
@@ -65,7 +71,11 @@ describe("Esc in a shortcut recorder", () => {
     {
       name: "existing binding",
       field: existingField,
-      open: () => activate(existingPill, "click"),
+      open: async () => {
+        await activate(page.getByRole("searchbox", { name: "Search keybindings" }), "focus");
+        await userEvent.keyboard("Toggle sidebar");
+        await activate(existingPill, "click");
+      },
       expectReset: async () => {
         await expect.element(existingField).not.toBeInTheDocument();
         await expect.element(existingPill).toHaveFocus();
@@ -80,11 +90,12 @@ describe("Esc in a shortcut recorder", () => {
         await activate(newField, "focus");
       },
       expectReset: async () => {
-        await expect.element(newField).toHaveValue("");
-        await expect.element(newField).toHaveAttribute("placeholder", "Unassigned");
+        await expect.element(newField).not.toBeInTheDocument();
+        await expect.element(page.getByRole("button", { name: "Add keybinding" })).toHaveFocus();
       },
     },
   ])("leaves the $name field without closing Settings", async ({ field, open, expectReset }) => {
+    setup();
     const onOpenChange = vi.fn();
     await using _screen = await render(
       <Dialog open onOpenChange={onOpenChange}>
@@ -120,7 +131,9 @@ it("unassigns a default shortcut and restores its condition when one is assigned
     async () => {
       await using screen = await render(<KeybindingsSettingsPanel />);
 
-      await screen.getByRole("button", { name: "Actions for Sidebar: Toggle" }).click();
+      const search = screen.getByRole("searchbox", { name: "Search keybindings" });
+      await search.fill("Toggle sidebar");
+      await screen.getByRole("button", { name: "Actions for Toggle sidebar" }).click();
       await screen.getByRole("menuitem", { name: "Unassign" }).click();
       expect(mutate).toHaveBeenLastCalledWith({
         environmentId: "env",
@@ -132,8 +145,9 @@ it("unassigns a default shortcut and restores its condition when one is assigned
         },
       });
 
+      await search.fill("Start in background");
       const unassigned = screen.getByRole("button", {
-        name: "Edit shortcut for Composer: Start in Background: Unassigned",
+        name: "Edit shortcut for Start in background: Unassigned",
       });
       const save = screen.getByRole("button", { name: "Save" });
       await unassigned.click();
@@ -177,12 +191,19 @@ it("Esc in the keybindings search clears the query without closing Settings", as
 });
 
 it("re-enables Save when a When editor closes on an expression it could not parse", async () => {
+  setup();
   await using screen = await render(
     <RegistryProvider>
       <KeybindingsSettingsPanel />
     </RegistryProvider>,
   );
-  const whenTrigger = screen.getByRole("button", { name: "Edit when clause for Terminal: Toggle" });
+  await userEvent.type(
+    screen.getByRole("searchbox", { name: "Search keybindings" }),
+    "Toggle terminal",
+  );
+  const whenTrigger = screen
+    .getByRole("button", { name: "Edit when clause for Toggle terminal" })
+    .first();
   const expression = screen.getByRole("textbox", { name: "When expression" });
 
   await whenTrigger.click();
@@ -195,4 +216,51 @@ it("re-enables Save when a When editor closes on an expression it could not pars
 
   await expect.element(expression).toHaveValue("terminalFocus");
   await expect.element(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+});
+
+it("cancels a new binding from its Command picker before closing Settings", async () => {
+  setup();
+  const onOpenChange = vi.fn();
+  await using _screen = await render(
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogPopup>
+        <DialogTitle>Settings</DialogTitle>
+        <KeybindingsSettingsPanel />
+      </DialogPopup>
+    </Dialog>,
+  );
+  await activate(page.getByRole("button", { name: "Add keybinding" }), "click");
+  await expect.element(newField).toBeVisible();
+  newField.element().closest('[role="row"]')!.querySelector<HTMLButtonElement>("button")!.focus();
+  await userEvent.keyboard("{Escape}");
+  expect(onOpenChange).not.toHaveBeenCalled();
+  await expect.element(newField).not.toBeInTheDocument();
+  await expect.element(page.getByRole("button", { name: "Add keybinding" })).toHaveFocus();
+  await userEvent.keyboard("{Escape}");
+  expect(onOpenChange).toHaveBeenCalledWith(false, expect.anything());
+});
+
+it("keeps a new binding open when Escape is pressed during its save", async () => {
+  setup();
+  let finishSave = () => {};
+  const pendingSave = new Promise<{ _tag: "Success"; value: undefined }>((resolve) => {
+    finishSave = () => resolve({ _tag: "Success", value: undefined });
+  });
+  runCommand.mockReturnValue(pendingSave);
+  await using screen = await render(<KeybindingsSettingsPanel />);
+  await screen.getByRole("button", { name: "Add keybinding" }).click();
+  await screen.getByRole("combobox").click();
+  await page.getByRole("option", { name: "Toggle sidebar", exact: true }).click();
+  const field = screen.getByRole("textbox", { name: "Keybinding for Toggle sidebar", exact: true });
+  await field.click();
+  await userEvent.keyboard("{Control>}k{/Control}");
+  await screen.getByRole("button", { name: "Save", exact: true }).click();
+  await expect.element(screen.getByRole("button", { name: "Saving" })).toBeDisabled();
+  await field.click();
+  const input = field.element();
+  await userEvent.keyboard("{Escape}");
+  expect(input.isConnected).toBe(true);
+  await expect.element(screen.getByRole("button", { name: "Add keybinding" })).toBeDisabled();
+  finishSave();
+  await expect.element(screen.getByRole("button", { name: "Add keybinding" })).toBeEnabled();
 });

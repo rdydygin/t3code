@@ -44,7 +44,7 @@ function IssueRowImpl({
   return (
     <div
       className={cn(
-        "flex items-center rounded-md [content-visibility:auto] [contain-intrinsic-block-size:56.5px]",
+        "flex items-center rounded-md px-3 py-1.5 [content-visibility:auto] [contain-intrinsic-block-size:56.5px]",
         selected ? "bg-accent" : "hover:bg-accent/60",
       )}
     >
@@ -52,7 +52,7 @@ function IssueRowImpl({
         type="button"
         aria-current={selected ? "true" : undefined}
         onClick={() => onSelect(entry)}
-        className={cn(PULL_REQUEST_ROW_CLASS, "@container/issue-row-meta px-3 py-2.5")}
+        className={cn(PULL_REQUEST_ROW_CLASS, "@container/issue-row-meta")}
       >
         <IssueStateGlyph state={entry.state} />
         <PullRequestRowLines

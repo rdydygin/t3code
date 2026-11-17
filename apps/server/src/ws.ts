@@ -8,6 +8,7 @@ import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Orchestrator from "./orchestration-v2/Orchestrator.ts";
 import * as PeerLinkRequests from "./peer/PeerLinkRequests.ts";
 import * as PeerLinks from "./peer/PeerLinks.ts";
+import * as NodeOS from "node:os";
 
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
@@ -83,6 +84,7 @@ import {
   ProviderSetupError,
   RelayClientInstallFailedError,
   type RelayClientInstallProgressEvent,
+  type AgentSessionImportProgressEvent,
   type ServerConfig as ClientServerConfig,
   type ServerConfigStreamEvent,
   type ServerLifecycleStreamEvent,
@@ -168,7 +170,7 @@ import {
   projectDomainEventForWire,
   projectThreadProjectionForWire,
   threadStreamEventItem,
-} from "./orchestration-v2/WireProjection.ts";
+} from "@t3tools/shared/wireProjection";
 import { dedupeSnapshotBodies } from "@t3tools/shared/orchestrationV2DedupedBodies";
 import * as ProjectStore from "./orchestration-v2/ProjectStore.ts";
 import * as ThreadSearch from "./orchestration-v2/ThreadSearch.ts";
@@ -1912,6 +1914,7 @@ export const layerWsRpc = (
           newProjectsRoot: managedFolders.namedProjectsRoot,
           ...(lastEventLoopStall === undefined ? {} : { lastEventLoopStall }),
           serverTime: DateTime.formatIso(yield* DateTime.now),
+          homeDirectory: NodeOS.homedir(),
         };
       });
 
@@ -1927,11 +1930,15 @@ export const layerWsRpc = (
           listProjects: projectStore.listShells(),
           latestSequence: applicationEvents.latestApplicationSequence,
         });
+        const messageCountByThread = yield* threadManagement.countArchivedThreadMessages();
         return {
           schemaVersion: threads.schemaVersion,
           snapshotSequence,
           projects,
-          threads: threads.archivedThreads,
+          threads: threads.archivedThreads.map((thread) => ({
+            ...thread,
+            messageCount: messageCountByThread.get(thread.id) ?? 0,
+          })),
         } as const;
       }).pipe(
         Effect.flatMap((snapshot) =>
@@ -3055,6 +3062,22 @@ export const layerWsRpc = (
         [WS_METHODS.agentSessionsScan]: () => agentSessionScanner.scan,
         [WS_METHODS.agentSessionsImport]: (input) =>
           agentSessionImporter.importRecentAgentThreads(input),
+        [WS_METHODS.agentSessionsImportWithProgress]: (input) =>
+          Stream.callback<
+            AgentSessionImportProgressEvent,
+            Effect.Error<ReturnType<typeof agentSessionImporter.importRecentAgentThreads>>
+          >((queue) => {
+            const reportProgress = (processedCount: number) =>
+              Queue.offer(queue, { type: "progress", processedCount }).pipe(Effect.asVoid);
+            return agentSessionImporter.importRecentAgentThreads(input, reportProgress).pipe(
+              Effect.flatMap((result) => Queue.offer(queue, { type: "complete", result })),
+              Effect.matchCauseEffect({
+                onFailure: (cause) => Queue.failCause(queue, cause),
+                onSuccess: () => Queue.end(queue),
+              }),
+              Effect.forkScoped,
+            );
+          }),
         [WS_METHODS.assetsCreateUrl]:
           /* Request instrumentation already owns the span; keep this helper in that context. */
           Effect.fnUntraced(function* (input) {

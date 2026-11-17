@@ -1,28 +1,21 @@
-import { ArrowLeftIcon, ArrowRightIcon, ChartNoAxesColumnIcon, SettingsIcon } from "lucide-react";
+import { ArrowLeftIcon, ChartNoAxesColumnIcon, SettingsIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { memo } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 
-import { useAtomValue } from "@effect/atom-react";
 import { useEnvironmentIdentificationMode } from "../../hooks/useSettings";
-import { shortcutLabelForCommand } from "../../keybindings";
-import {
-  navigateHistory,
-  useCanNavigateHistory,
-  type HistoryDirection,
-} from "../../navigationHistory";
-import { primaryServerKeybindingsAtom } from "../../state/server";
 import { cn } from "../../lib/utils";
 import { useIssuesSupported, usePullRequestsSupported } from "../../state/environments";
-import { T3Wordmark } from "../T3Wordmark";
+import { observeResize } from "../../lib/observeResize";
 import {
   resolveEnvironmentIdentificationPillLabel,
-  resolveSidebarStageBackdropVariant,
+  useSidebarStageBackdropVariant,
   SidebarStageBackdrop,
   useEnvironmentStageLabel,
 } from "../SidebarStageBackdrop";
+import { TooltipProvider } from "../ui/tooltip";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { T3Wordmark } from "../T3Wordmark";
 import {
   SidebarFooter,
   SidebarMenu,
@@ -31,82 +24,28 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "../ui/sidebar";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
-import { readPullRequestListPreferences } from "../pullRequest/pullRequestListPreferences";
 import { readIssueListPreferences } from "../issue/issueListPreferences";
 import { IssueGlyph } from "../issue/issuePresentation";
+import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
+import { useOpenLayoutPage } from "../../layout/pageNavigation";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
+import { SidebarHeaderIconButton } from "./SidebarThreadHeader";
 import { SidebarThreadUndoNotice } from "./SidebarThreadUndoNotice";
 import { SidebarProviderUpdatePill } from "./SidebarProviderUpdatePill";
 import { SidebarUpdateArchitectureWarning, SidebarUpdatePill } from "./SidebarUpdatePill";
-import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
-import { observeResize } from "~/lib/observeResize";
 
-export const SidebarChromeHeader = memo(function SidebarChromeHeader({
-  isElectron,
-}: {
-  isElectron: boolean;
-}) {
-  const stageLabel = useEnvironmentStageLabel();
-  const environmentIdentificationMode = useEnvironmentIdentificationMode();
-  const backdropVariant = resolveSidebarStageBackdropVariant(
-    stageLabel,
-    environmentIdentificationMode,
-  );
-  const pillLabel =
-    environmentIdentificationMode === "pill"
-      ? resolveEnvironmentIdentificationPillLabel(stageLabel)
-      : null;
+const SIDEBAR_BRAND_OFFSET = "ml-[var(--workspace-titlebar-content-left)]";
 
-  return (
-    <div
-      className={cn(
-        "relative flex h-[var(--workspace-topbar-height)] shrink-0 flex-row items-center gap-2 pr-3",
-        isElectron && "drag-region",
-      )}
-    >
-      {backdropVariant ? <SidebarStageBackdrop variant={backdropVariant} /> : null}
-      <div className="relative top-[calc(var(--workspace-controls-top)-env(safe-area-inset-top))] z-10 ml-[calc(var(--workspace-controls-left)+1px-env(safe-area-inset-left))] flex shrink-0 items-center md:hidden">
-        <SidebarTrigger
-          variant={backdropVariant ? "media-navigation" : "ghost"}
-          className="relative top-auto translate-y-0"
-          aria-label="Toggle main sidebar"
-        />
-      </div>
-      <div className="relative z-10 flex h-8 min-w-0 flex-1 flex-wrap content-start items-center gap-x-2 overflow-hidden py-0.5">
-        <div className="flex shrink-0 items-center gap-1">
-          <SidebarBrand onBackdrop={backdropVariant !== null} />
-          {isElectron ? (
-            <div className="hidden items-center md:flex">
-              <HistoryNavigationButton direction="back" onBackdrop={backdropVariant !== null} />
-              <HistoryNavigationButton direction="forward" onBackdrop={backdropVariant !== null} />
-            </div>
-          ) : null}
-        </div>
-        {pillLabel ? (
-          <div className="ml-1 flex h-7 items-center">
-            <Badge data-environment-identification="pill" size="sm" variant="secondary">
-              {pillLabel}
-            </Badge>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-});
-
+// The pill yields first; the minimum always reserves both history buttons.
 export function SidebarBrandWidthProbe({
-  isElectron,
   onWidthChange,
 }: {
-  isElectron: boolean;
   onWidthChange: (width: number) => void;
 }) {
-  const observeWidth = (probe: HTMLDivElement) => {
-    return observeResize(probe, ([entry]) => {
+  const observeWidth = (probe: HTMLDivElement) =>
+    observeResize(probe, ([entry]) => {
       if (entry) onWidthChange(entry.borderBoxSize[0]?.inlineSize ?? probe.offsetWidth);
     });
-  };
 
   return (
     <div
@@ -114,53 +53,11 @@ export function SidebarBrandWidthProbe({
       className="pointer-events-none invisible fixed top-0 left-0 flex w-max border-r border-transparent pr-3"
       ref={observeWidth}
     >
-      <div className="ml-[var(--workspace-titlebar-content-left)] flex gap-1">
+      <div className={cn(SIDEBAR_BRAND_OFFSET, "flex gap-2")}>
         <SidebarBrandMark onBackdrop={false} />
-        {isElectron ? <div className="w-[calc(2*var(--workspace-titlebar-control-size))]" /> : null}
+        <div className="w-[calc(var(--workspace-titlebar-control-size)*2)]" />
       </div>
     </div>
-  );
-}
-
-function HistoryNavigationButton({
-  direction,
-  onBackdrop,
-}: {
-  direction: HistoryDirection;
-  onBackdrop: boolean;
-}) {
-  const keybindings = useAtomValue(primaryServerKeybindingsAtom);
-  const enabled = useCanNavigateHistory(direction);
-  const label = direction === "back" ? "Go back" : "Go forward";
-  const shortcutLabel = shortcutLabelForCommand(
-    keybindings,
-    direction === "back" ? "navigation.back" : "navigation.forward",
-  );
-  const Icon = direction === "back" ? ArrowLeftIcon : ArrowRightIcon;
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            aria-label={label}
-            className={cn(
-              "[-webkit-app-region:no-drag]",
-              onBackdrop && "relative top-auto translate-y-0",
-            )}
-            disabled={!enabled}
-            onClick={() => navigateHistory(direction)}
-            size="icon-sm"
-            variant={onBackdrop ? "media-navigation" : "ghost"}
-          />
-        }
-      >
-        <Icon className="size-3.5" />
-      </TooltipTrigger>
-      <TooltipPopup side="bottom">
-        {label}
-        {shortcutLabel ? ` (${shortcutLabel})` : ""}
-      </TooltipPopup>
-    </Tooltip>
   );
 }
 
@@ -169,8 +66,8 @@ function SidebarBrand({ onBackdrop }: { onBackdrop: boolean }) {
     <Link
       aria-label="T3 Code home"
       className={cn(
-        "relative z-10 ml-[var(--workspace-titlebar-content-left)] hidden h-7 w-fit min-w-0 shrink-0 items-center overflow-hidden rounded-md outline-hidden ring-ring focus-visible:ring-2 focus-visible:ring-inset md:flex",
-        onBackdrop ? "text-white" : "text-foreground",
+        "pointer-events-auto relative z-10 hidden h-7 w-fit min-w-0 shrink-0 items-center overflow-hidden rounded-md outline-hidden ring-ring [-webkit-app-region:no-drag] focus-visible:ring-2 focus-visible:ring-inset md:flex",
+        onBackdrop ? "text-white light:text-foreground" : "text-foreground",
       )}
       to="/"
     >
@@ -181,12 +78,12 @@ function SidebarBrand({ onBackdrop }: { onBackdrop: boolean }) {
 
 function SidebarBrandMark({ onBackdrop }: { onBackdrop: boolean }) {
   return (
-    <span className="inline-flex min-w-0 items-baseline gap-1 text-sm font-medium tracking-tight">
+    <span className="inline-flex min-w-0 items-baseline gap-1 text-label tracking-tight">
       <T3Wordmark aria-label="T3" className="h-[1cap] w-auto shrink-0" />
       <span
         className={cn(
           "truncate [text-box:trim-both_cap_alphabetic] supports-[text-box:trim-both_cap_alphabetic]:py-1",
-          onBackdrop ? "text-white/70" : "text-muted-foreground",
+          onBackdrop ? "text-white/70 light:text-muted-foreground" : "text-muted-foreground",
         )}
       >
         Code
@@ -195,6 +92,66 @@ function SidebarBrandMark({ onBackdrop }: { onBackdrop: boolean }) {
   );
 }
 
+export const SidebarChromeHeader = memo(function SidebarChromeHeader({
+  isElectron,
+}: {
+  isElectron: boolean;
+}) {
+  const environmentIdentificationMode = useEnvironmentIdentificationMode();
+  const backdropVariant = useSidebarStageBackdropVariant(environmentIdentificationMode);
+
+  return (
+    // The sidebar's share of the window chrome row, not a padded SidebarHeader.
+    // Fixed controls sit over it; the inset content starts 4px under the row (pen s8qVFu).
+    <div
+      className={cn(
+        "@container/sidebar-header relative flex h-(--workspace-chrome-row-height) shrink-0 flex-row items-center gap-2 pr-3 md:px-0",
+        "md:group-data-[variant=inset]:-ms-(--workspace-sidebar-edge-inset) md:group-data-[variant=inset]:mb-[calc(--spacing(1)-var(--sidebar-content-inset))]",
+        isElectron && "drag-region",
+      )}
+    >
+      {backdropVariant ? <SidebarStageBackdrop variant={backdropVariant} /> : null}
+      {/* Match the fixed control's inset inside the sheet's safe area. */}
+      <div className="relative top-[calc(var(--workspace-controls-top)-env(safe-area-inset-top))] z-10 ml-[calc(var(--workspace-controls-left)-env(safe-area-inset-left))] flex shrink-0 items-center md:hidden">
+        <SidebarTrigger
+          variant={backdropVariant ? "media-navigation" : "ghost"}
+          className="relative top-auto translate-y-0"
+          aria-label="Toggle main sidebar"
+        />
+      </div>
+      <div className="relative z-10 flex h-8 min-w-0 flex-1 flex-wrap content-start items-center gap-x-2 overflow-hidden py-0.5 md:hidden">
+        <SidebarStagePill className="ml-1 hidden @[15rem]/sidebar-header:flex" />
+      </div>
+    </div>
+  );
+});
+
+export function SidebarChromeBrand({ onBackdrop }: { onBackdrop: boolean }) {
+  return (
+    <div className="-ml-px flex h-7 flex-wrap content-start items-center gap-x-2 overflow-hidden pl-(--workspace-titlebar-control-gap) pr-2">
+      <SidebarBrand onBackdrop={onBackdrop} />
+      <SidebarStagePill />
+    </div>
+  );
+}
+
+function SidebarStagePill({ className }: { className?: string }) {
+  const stageLabel = useEnvironmentStageLabel();
+  const environmentIdentificationMode = useEnvironmentIdentificationMode();
+  const pillLabel =
+    environmentIdentificationMode === "pill"
+      ? resolveEnvironmentIdentificationPillLabel(stageLabel)
+      : null;
+  return pillLabel ? (
+    <div className={cn("flex h-7 shrink-0 items-center", className)}>
+      <Badge data-environment-identification="pill" size="sm" variant="secondary">
+        {pillLabel}
+      </Badge>
+    </div>
+  ) : null;
+}
+
+// The footer uses 32px icon-only controls with 16px glyphs (pen C0J52w).
 function SidebarUtilityItem({
   icon,
   label,
@@ -205,24 +162,16 @@ function SidebarUtilityItem({
   onClick: () => void;
 }) {
   return (
-    <SidebarMenuItem className="shrink-0">
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <SidebarMenuButton aria-label={label} onClick={onClick} size="icon">
-              {icon}
-            </SidebarMenuButton>
-          }
-        />
-        <TooltipPopup side="top">{label}</TooltipPopup>
-      </Tooltip>
-    </SidebarMenuItem>
+    <SidebarHeaderIconButton label={label} size="footer" onClick={onClick}>
+      {icon}
+    </SidebarHeaderIconButton>
   );
 }
 
 const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   const navigate = useNavigate();
   const navigateToMainApp = useNavigateToMainApp();
+  const openLayoutPage = useOpenLayoutPage();
   const { isMobile, setOpenMobile } = useSidebar();
   const isOnUtilityPage = useLocation({
     select: (location) => isSidebarUtilityPage(location.pathname),
@@ -236,10 +185,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   };
   const handlePullRequestsClick = () => {
     closeMobileSidebar();
-    void navigate({
-      to: "/pull-requests",
-      search: readPullRequestListPreferences(),
-    });
+    void openLayoutPage("pull-requests");
   };
   const handleIssuesClick = () => {
     closeMobileSidebar();
@@ -247,7 +193,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   };
   const handleSettingsClick = () => {
     closeMobileSidebar();
-    void navigate({ to: "/settings" });
+    void navigate({ to: "/settings", search: { pane: undefined } });
   };
 
   const handleUsageClick = () => {
@@ -263,45 +209,50 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   };
 
   return (
-    <SidebarMenu className="flex-row items-center">
-      {isOnUtilityPage ? (
-        <SidebarMenuItem className="min-w-0 flex-1">
-          <SidebarMenuButton onClick={handleBackClick}>
-            <ArrowLeftIcon />
-            <span>Back</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ) : (
-        <>
-          <SidebarUtilityItem
-            icon={<SettingsIcon />}
-            label="Settings"
-            onClick={handleSettingsClick}
-          />
-          {pullRequestsSupported ? (
-            <SidebarUtilityItem
-              icon={<PullRequestGlyph.pullRequest />}
-              label="Pull requests"
-              onClick={handlePullRequestsClick}
-            />
-          ) : null}
-          {issuesSupported ? (
-            <SidebarUtilityItem
-              icon={<IssueGlyph.issue />}
-              label="Issues"
-              onClick={handleIssuesClick}
-            />
-          ) : null}
-          <SidebarUtilityItem
-            icon={<ChartNoAxesColumnIcon />}
-            label="Usage"
-            onClick={handleUsageClick}
-          />
-        </>
-      )}
-      <SidebarThreadUndoNotice />
-      <SidebarUpdatePill />
-    </SidebarMenu>
+    <TooltipProvider>
+      <SidebarMenu className="flex-row items-center">
+        {isOnUtilityPage ? (
+          <SidebarMenuItem className="min-w-0 flex-1">
+            <SidebarMenuButton size="control" onClick={handleBackClick}>
+              <ArrowLeftIcon />
+              <span>Back</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ) : (
+          // Keep the three utilities in the design's compact, icon-only row.
+          <SidebarMenuItem className="shrink-0">
+            <div className="flex gap-1">
+              <SidebarUtilityItem
+                icon={<SettingsIcon className="size-4" />}
+                label="Settings"
+                onClick={handleSettingsClick}
+              />
+              {pullRequestsSupported ? (
+                <SidebarUtilityItem
+                  icon={<PullRequestGlyph.pullRequest className="size-4" />}
+                  label="Pull Requests"
+                  onClick={handlePullRequestsClick}
+                />
+              ) : null}
+              {issuesSupported ? (
+                <SidebarUtilityItem
+                  icon={<IssueGlyph.issue className="size-4" />}
+                  label="Issues"
+                  onClick={handleIssuesClick}
+                />
+              ) : null}
+              <SidebarUtilityItem
+                icon={<ChartNoAxesColumnIcon className="size-4" />}
+                label="Usage"
+                onClick={handleUsageClick}
+              />
+            </div>
+          </SidebarMenuItem>
+        )}
+        <SidebarThreadUndoNotice />
+        <SidebarUpdatePill />
+      </SidebarMenu>
+    </TooltipProvider>
   );
 });
 

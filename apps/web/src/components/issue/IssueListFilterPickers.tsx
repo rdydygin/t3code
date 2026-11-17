@@ -1,6 +1,6 @@
 import type { IssueCandidatesTarget } from "@t3tools/client-runtime/state/issues";
 import type { IssueInvolvement, IssueListState } from "@t3tools/contracts";
-import { LayersIcon, ListFilterIcon, TagIcon, UserIcon } from "lucide-react";
+import { CircleDotIcon, LayersIcon, ListFilterIcon, TagIcon, UserIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -55,11 +55,11 @@ export function IssueFiltersMenu(props: {
   const scopes = open ? props.scopes : [];
   return (
     <Menu onOpenChange={setOpen}>
-      <MenuTrigger render={<Button variant="outline" />}>
+      <MenuTrigger render={<Button variant="secondary" />}>
         <ListFilterIcon className="size-4" />
         <span>Filters</span>
         {count > 0 ? (
-          <span className="rounded-full bg-muted px-1.5 text-xs text-muted-foreground tabular-nums">
+          <span className="rounded-full bg-muted px-1.5 text-caption text-muted-foreground tabular-nums">
             {count}
           </span>
         ) : null}
@@ -67,12 +67,14 @@ export function IssueFiltersMenu(props: {
       <MenuPopup align="end" side="bottom">
         <PullRequestFilterRadioSubmenu
           label="State"
+          icon={CircleDotIcon}
           value={props.state}
           options={props.stateOptions}
           onChange={props.onState}
         />
         <PullRequestFilterRadioSubmenu
           label="Involvement"
+          icon={UserIcon}
           value={props.involvement}
           options={props.involvementOptions}
           onChange={props.onInvolvement}
@@ -82,7 +84,7 @@ export function IssueFiltersMenu(props: {
           <MenuSubTrigger>
             <TagIcon aria-hidden className="size-3.5" />
             <span className="flex-1">Labels</span>
-            <span className="min-w-0 max-w-32 truncate text-xs text-muted-foreground">
+            <span className="min-w-0 max-w-32 truncate text-caption text-muted-foreground">
               {props.labels.length === 0
                 ? "Any"
                 : props.labels.length === 1
@@ -98,7 +100,7 @@ export function IssueFiltersMenu(props: {
           <MenuSubTrigger>
             <UserIcon aria-hidden className="size-3.5" />
             <span className="flex-1">Assignee</span>
-            <span className="min-w-0 max-w-32 truncate text-xs text-muted-foreground">
+            <span className="min-w-0 max-w-32 truncate text-caption text-muted-foreground">
               {props.assignee ?? "Anyone"}
             </span>
           </MenuSubTrigger>
@@ -213,7 +215,7 @@ function AssigneeChoices(props: {
           <MenuRadioItem key={actor.login} value={actor.login}>
             <span className="min-w-0 flex-1 truncate">
               {actor.login}
-              {actor.name ? <span className="text-muted-foreground"> · {actor.name}</span> : null}
+              {actor.name ? <span className="text-muted-foreground"> {actor.name}</span> : null}
             </span>
           </MenuRadioItem>
         ))}

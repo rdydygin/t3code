@@ -244,6 +244,7 @@ function IssueLabelPicker({
     <PullRequestCandidatePicker
       icon={<TagIcon className="size-3.5" />}
       label="Change labels"
+      popupWidth="labels"
       allowed={allowed}
       disabledReason={disabledReason}
       open={open}
@@ -279,7 +280,7 @@ function IssueLabelPicker({
             <span className="min-w-0 flex-1 truncate">
               {candidate.name}
               {candidate.description ? (
-                <span className="text-muted-foreground"> · {candidate.description}</span>
+                <span className="text-muted-foreground"> {candidate.description}</span>
               ) : null}
             </span>
             {isSelected(draft, candidate.name, applied.has(candidate.name)) ? (
@@ -353,6 +354,7 @@ function IssueAssigneePicker({
     <PullRequestCandidatePicker
       icon={<UserPlusIcon className="size-3.5" />}
       label="Change assignees"
+      popupWidth="reviewers"
       allowed={allowed}
       disabledReason={disabledReason}
       open={open}
@@ -410,8 +412,8 @@ function LinkedPullRequestRow({
   const body = (
     <>
       <PullRequestStateGlyph state={link.state} isDraft={link.isDraft} />
-      <span className="min-w-0 flex-1 truncate text-sm">{link.title}</span>
-      <PullRequestMetaLine className="shrink-0 text-xs text-muted-foreground">
+      <span className="min-w-0 flex-1 truncate text-body">{link.title}</span>
+      <PullRequestMetaLine className="shrink-0 text-caption text-muted-foreground">
         {link.closesIssue ? <span>Closes this issue</span> : null}
         <span className="tabular-nums">
           {link.repository.toLowerCase() === scope.toLowerCase() ? "" : link.repository}#
@@ -420,16 +422,25 @@ function LinkedPullRequestRow({
       </PullRequestMetaLine>
     </>
   );
-  const className =
-    "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent";
   return onSelect ? (
-    <button type="button" className={className} onClick={onSelect}>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm-multiline"
+      className="w-full justify-start"
+      onClick={onSelect}
+    >
       {body}
-    </button>
+    </Button>
   ) : (
-    <a href={link.url} target="_blank" rel="noopener noreferrer" className={className}>
+    <Button
+      variant="ghost"
+      size="sm-multiline"
+      className="w-full justify-start"
+      render={<a href={link.url} target="_blank" rel="noopener noreferrer" />}
+    >
       {body}
-    </a>
+    </Button>
   );
 }
 
@@ -572,7 +583,7 @@ export function IssueDetailPanel({
           render={
             <Button
               size="xs"
-              variant="outline"
+              variant="secondary"
               aria-label={`Issue state, ${currentState.label}`}
               disabled={changingState}
             />
@@ -598,7 +609,7 @@ export function IssueDetailPanel({
         </MenuPopup>
       </Menu>
     ) : (
-      <span className="flex shrink-0 items-center gap-1 font-medium">
+      <span className="flex shrink-0 items-center gap-1">
         {currentStateIcon}
         {currentState.label}
       </span>
@@ -615,12 +626,10 @@ export function IssueDetailPanel({
         data-pull-request-summary-scroll
       >
         <div className="px-4 pb-1">
-          <PullRequestDetailTitleRow className="h-7 gap-1 text-sm sm:text-xs">
-            <span className="min-w-0 truncate font-medium text-muted-foreground">
-              {detail.scope}
-            </span>
+          <PullRequestDetailTitleRow className="h-7 gap-1 text-body sm:text-caption">
+            <span className="min-w-0 truncate text-muted-foreground">{detail.scope}</span>
             <InlineButton
-              className={cn("shrink-0 font-medium", currentState.toneClassName)}
+              className={cn("shrink-0", currentState.toneClassName)}
               aria-label={`Open ${detail.displayKey} on ${tracker.providerName}`}
               render={<a href={detail.url} target="_blank" rel="noopener noreferrer" />}
             >
@@ -678,7 +687,7 @@ export function IssueDetailPanel({
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 disabled={saving}
                 onClick={() => setEditing(null)}
               >
@@ -687,9 +696,7 @@ export function IssueDetailPanel({
             </form>
           ) : (
             <PullRequestDetailTitleRow className="group mt-1 gap-1">
-              <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug">
-                {detail.title}
-              </h2>
+              <h2 className="min-w-0 flex-1 text-title leading-snug">{detail.title}</h2>
               {canEdit ? (
                 <PullRequestEditButton
                   aria-label="Edit title"
@@ -702,7 +709,7 @@ export function IssueDetailPanel({
             </PullRequestDetailTitleRow>
           )}
 
-          <PullRequestMetaLine className="mt-2 min-h-5 text-xs text-muted-foreground">
+          <PullRequestMetaLine className="mt-2 min-h-5 text-caption text-muted-foreground">
             <PullRequestActorLabel actor={detail.author} />
             <span>opened {formatRelativeTimeLabel(detail.createdAt)}</span>
             {detail.closedAt ? (
@@ -843,7 +850,7 @@ export function IssueDetailPanel({
             {nextCursor !== null ? (
               <Button
                 size="sm"
-                variant="outline"
+                variant="secondary"
                 className="self-start"
                 disabled={loadingOlder}
                 onClick={() => void loadOlder()}
@@ -852,7 +859,7 @@ export function IssueDetailPanel({
               </Button>
             ) : null}
             {timeline.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing has happened here yet.</p>
+              <p className="text-body text-muted-foreground">Nothing has happened here yet.</p>
             ) : null}
             {timeline.map((item) =>
               item.kind === "comment" ? (
@@ -860,7 +867,7 @@ export function IssueDetailPanel({
                   key={`c:${item.comment.id}`}
                   className="flex flex-col gap-2 rounded-lg border border-border/60 p-3"
                 >
-                  <PullRequestMetaLine className="text-xs text-muted-foreground">
+                  <PullRequestMetaLine className="text-caption text-muted-foreground">
                     <PullRequestActorLabel actor={item.comment.author} />
                     {item.comment.url ? (
                       <InlineButton
@@ -894,7 +901,7 @@ export function IssueDetailPanel({
               ) : (
                 <PullRequestMetaLine
                   key={`e:${item.event.id}`}
-                  className="px-1 text-xs text-muted-foreground"
+                  className="px-1 text-caption text-muted-foreground"
                 >
                   <PullRequestActorLabel actor={item.event.actor} />
                   <span>{issueEventSentence(item.event)}</span>

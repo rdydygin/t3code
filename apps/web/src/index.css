@@ -1819,11 +1819,11 @@ html[data-theme-id]:not([data-theme-id=""]):not(.black-chrome) {
   transition: translate var(--panel-animation-duration) ease-out;
 }
 
-/* Over the art the sidebar goes transparent and its secondary text takes the
-   art's tint, as alpha over the image instead of fixed grays. */
+/* Over the art the sidebar drops its fill and grain to avoid a visible edge;
+   secondary text takes the art's tint as alpha instead of fixed grays. */
 @media (width >= 48rem) {
   [data-chrome-art] [data-slot="sidebar-inner"] {
-    background-color: transparent;
+    background: transparent;
   }
 
   [data-chrome-art] [data-app-sidebar] {

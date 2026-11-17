@@ -6711,6 +6711,18 @@ body {
       }
     }
 
+    /* At the pane edge the first tab has a straight side, without a clipped ear. */
+    & [data-pane-join-start] [data-jc="l"] {
+      & [data-jr] {
+        mask-size:
+          var(--r) var(--r),
+          1px calc(100% - var(--r));
+      }
+      & :is([data-je], [data-jer], [data-jt]) {
+        display: none;
+      }
+    }
+
     & [data-pane-notch-unfocused] [data-pane-join] {
       & :is([data-jr], [data-jer], [data-jt]),
       & [data-jm]::after {

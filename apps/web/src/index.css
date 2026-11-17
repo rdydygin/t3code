@@ -3682,7 +3682,7 @@ html:root[data-theme-id="t3-code-classic"].black-chrome [data-app-sidebar] {
 }
 
 /* Preserve the default pill; other styles inherit their card's pill recipe. */
-:root:is(
+:root:not([data-theme-id]):is(
     :not([data-surface-style]),
     [data-surface-style="gradient-rim"],
     [data-surface-style="flat"]
@@ -3698,7 +3698,7 @@ html:root[data-theme-id="t3-code-classic"].black-chrome [data-app-sidebar] {
 
 :root {
   @variant light {
-    &:is(
+    &:not([data-theme-id]):is(
         :not([data-surface-style]),
         [data-surface-style="gradient-rim"],
         [data-surface-style="flat"]

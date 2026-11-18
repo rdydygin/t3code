@@ -38,6 +38,7 @@ const SETTINGS_SEARCH_TERMS = {
   SettingsVoice: [
     "microphone",
     "dictation",
+    "groq",
     "transcription",
     "transcribe on",
     "transcription model",

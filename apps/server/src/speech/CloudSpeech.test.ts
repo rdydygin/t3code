@@ -10,7 +10,9 @@ import { expect, vi } from "vite-plus/test";
 import * as ServerSettings from "../serverSettings.ts";
 import * as CloudSpeech from "./CloudSpeech.ts";
 
-it.effect.each(["openai", "xai"] as const)("sends only to %s using its own saved key", (provider) =>
+const providers = ["openai", "xai", "groq"] as const;
+
+it.effect.each(providers)("sends only to %s using its own saved key", (provider) =>
   Effect.gen(function* () {
     const reference = {
       provider: SecretProviderId.make("work"),
@@ -38,18 +40,24 @@ it.effect.each(["openai", "xai"] as const)("sends only to %s using its own saved
         ),
       ),
     );
+    const terms = ["T3 Code", "語".repeat(48), "名".repeat(48)];
     const transcribe = (pcm = new Uint8Array(new Float32Array([0, 0.5]).buffer)) =>
       service
         .transcribe(provider, pcm, {
           ...DEFAULT_SPEECH_TRANSCRIPTION_OPTIONS,
           speechLanguage: "en",
-          speechCustomWords: [{ term: "T3 Code", aliases: [] }],
+          speechCustomWords: terms.map((term) => ({ term, aliases: [] })),
         })
         .pipe(Effect.provideService(FetchHttpClient.Fetch, upstream));
     yield* service.setKey(provider === "openai" ? "xai" : "openai", Redacted.make("other"));
     expect((yield* Effect.flip(transcribe()))._tag).toBe("CloudSpeechError");
     yield* service.setKey(provider, Redacted.make("chosen"));
-    expect(yield* service.configured).toEqual({ openai: true, xai: true, openrouter: false });
+    expect(yield* service.configured).toEqual({
+      openai: true,
+      xai: provider !== "groq",
+      openrouter: false,
+      groq: provider === "groq",
+    });
     yield* Effect.flip(transcribe(new Uint8Array(3)));
     expect(upstream).not.toHaveBeenCalled();
     expect(yield* transcribe()).toBe("hello");
@@ -58,15 +66,25 @@ it.effect.each(["openai", "xai"] as const)("sends only to %s using its own saved
       {
         openai: "https://api.openai.com/v1/audio/transcriptions",
         xai: "https://api.x.ai/v1/stt",
+        groq: "https://api.groq.com/openai/v1/audio/transcriptions",
       }[provider],
     );
     expect(init?.redirect).toBe("error");
     expect(new Headers(init?.headers).get("authorization")).toBe("Bearer chosen");
     const form = init?.body as FormData;
     expect(form.get("model")).toBe(
-      provider === "openai" ? "gpt-transcribe" : "grok-voice-transcribe-2.0",
+      {
+        openai: "gpt-transcribe",
+        xai: "grok-voice-transcribe-2.0",
+        groq: "whisper-large-v3-turbo",
+      }[provider],
     );
-    expect(form.getAll(provider === "openai" ? "keywords[]" : "keyterm")).toEqual(["T3 Code"]);
+    if (provider === "groq") {
+      expect(form.get("prompt")).toBe(terms.slice(0, 2).join(", "));
+      expect([...form.keys()].sort()).toEqual(["file", "language", "model", "prompt"]);
+    } else {
+      expect(form.getAll(provider === "openai" ? "keywords[]" : "keyterm")).toEqual(terms);
+    }
     expect(form.get(provider === "openai" ? "languages[]" : "language")).toBe("en");
     expect([...form.keys()].at(-1)).toBe("file");
     const wav = new DataView(yield* Effect.promise(() => (form.get("file") as Blob).arrayBuffer()));

@@ -106,6 +106,14 @@ it("cancelling a provider's setup keeps the current destination and writes nothi
       await dialog.getByRole("button", { name: "Cancel" }).click();
       await expect.element(dialog).not.toBeInTheDocument();
       await expect.element(destination).toHaveTextContent("Laptop");
+      await destination.click();
+      await page.getByRole("option", { name: "Groq via Laptop" }).click();
+      await expect
+        .element(dialog.getByText("Update this environment to use this dictation provider."))
+        .toBeVisible();
+      await expect
+        .element(dialog.getByRole("button", { name: "Save and enable" }))
+        .not.toBeInTheDocument();
       expect(writes).toEqual([]);
     },
   );
@@ -176,22 +184,29 @@ it("keeps the active provider's grant when editing its key", async () => {
   );
 });
 
-it("uses a provider's saved key without writing it, and turns dictation off", async () => {
+it.each([
+  ["xai", "Grok Voice Transcribe"],
+  ["groq", "Groq"],
+])("uses the saved %s key without writing it, and turns dictation off", async (provider, label) => {
   chooseAudioDestination({ kind: "environment", environmentId: id });
   await withVoicePanel(
     (url) =>
       url.pathname === "/api/voice/cloud/keys"
-        ? Promise.resolve(Response.json({ openai: false, xai: true }))
+        ? Promise.resolve(Response.json({ openai: false, xai: false, [provider]: true }))
         : null,
     async (screen) => {
       const destination = screen.getByRole("combobox", { name: "Transcribe with" });
       await destination.click();
-      await page.getByRole("option", { name: "Grok Voice Transcribe via Laptop" }).click();
+      await page.getByRole("option", { name: `${label} via Laptop` }).click();
       await page
         .getByRole("dialog")
-        .getByRole("button", { name: "Use Grok Voice Transcribe" })
+        .getByRole("button", { name: `Use ${label}` })
         .click();
-      await expect.element(destination).toHaveTextContent("Grok Voice Transcribe via Laptop");
+      await expect.element(destination).toHaveTextContent(`${label} via Laptop`);
+      if (provider === "groq")
+        await expect
+          .element(screen.getByRole("switch", { name: "Silence filtering" }))
+          .toBeDisabled();
       await destination.click();
       await page.getByRole("option", { name: "Off", exact: true }).click();
       await expect.element(destination).toHaveTextContent("Off");

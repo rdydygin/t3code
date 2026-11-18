@@ -29,6 +29,7 @@ import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import type { HttpClient } from "effect/http";
 import { Atom, AsyncResult } from "effect/reactivity";
+import { T } from "gt-react";
 import { useId, useState } from "react";
 import { isSecretsFeatureEnabled } from "../../env";
 import {
@@ -216,9 +217,9 @@ export function CloudVoiceConfiguration({
   const keyReady = draft.trim() ? credential !== undefined : Boolean(saved);
   const modelChanged = model !== (currentModel ?? "");
   const destination = (): CloudDestination =>
-    routed && isModelId(model)
-      ? { kind: "cloud", provider: "openrouter", environmentId: id, model }
-      : { kind: "cloud", provider: provider as "openai" | "xai", environmentId: id };
+    provider === "openrouter"
+      ? { kind: "cloud", provider, environmentId: id, model }
+      : { kind: "cloud", provider, environmentId: id };
   const enable = () => chooseAudioDestination(destination());
   const canSubmit = routed
     ? modelChosen && keyReady && (!active || modelChanged || keyChanged)
@@ -343,11 +344,10 @@ export function CloudVoiceConfiguration({
               <Button size="sm" variant="secondary" onClick={refresh}>
                 Retry loading API key
               </Button>
-            ) : routed &&
-              AsyncResult.isSuccess(presence) &&
-              presence.value &&
-              saved === undefined ? (
-              <p>Update {environment.label} to use OpenRouter dictation.</p>
+            ) : AsyncResult.isSuccess(presence) && presence.value && saved === undefined ? (
+              <p>
+                <T>Update this environment to use this dictation provider.</T>
+              </p>
             ) : saved === undefined ? (
               <p role="status">Checking for an API key…</p>
             ) : routed ? (

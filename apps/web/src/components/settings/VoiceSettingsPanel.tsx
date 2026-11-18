@@ -10,7 +10,7 @@ import {
   updateEnvironmentSpeechModelUnloadTimeout,
 } from "@t3tools/client-runtime/voice-input";
 import type { PreparedConnection } from "@t3tools/client-runtime/connection";
-import { openRouterIcon } from "@t3tools/client-runtime/provider-clients";
+import { groqIcon, openRouterIcon } from "@t3tools/client-runtime/provider-clients";
 import {
   AuthFilesystemReadScope,
   AuthSettingsWriteScope,
@@ -31,6 +31,7 @@ import {
 import { createModelSelection, pickModelSelection } from "@t3tools/shared/model";
 import { resolveSpeechPostProcessingModelSelection } from "@t3tools/shared/serverSettings";
 import { cloudSpeechLanguages } from "@t3tools/shared/speech";
+import { T } from "gt-react";
 import {
   ArrowDownUpIcon,
   AudioLinesIcon,
@@ -140,8 +141,14 @@ import { useScopedSettings, useUpdateScopedSettings } from "./useScopedSettings"
 
 const OFF = "off";
 function CloudSpeechLogo({ provider }: { provider: CloudSpeechProvider }) {
-  if (provider === "openrouter")
-    return <ProviderPackageIcon icon={openRouterIcon} aria-hidden className="size-4 shrink-0" />;
+  if (provider === "openrouter" || provider === "groq")
+    return (
+      <ProviderPackageIcon
+        icon={provider === "groq" ? groqIcon : openRouterIcon}
+        aria-hidden
+        className="size-4 shrink-0"
+      />
+    );
   return (
     <ProviderInstanceIcon
       driverKind={ProviderDriverKind.make(provider === "openai" ? "codex" : "grok")}
@@ -1232,6 +1239,8 @@ export function VoiceSettingsPanel() {
   const settings = useClientSettings();
   const settingsScope = useOptionalSettingsScope();
   const destination = useVoiceTranscriptionDestination();
+  const providerHandlesSilence =
+    destination.cloudProvider === "openai" || destination.cloudProvider === "groq";
   const canManageKey = useEnvironmentScope(destination.environmentId, AuthSettingsWriteScope);
   const [pendingCloud, setPendingCloud] = useState<{
     provider: CloudSpeechProvider;
@@ -1580,14 +1589,16 @@ export function VoiceSettingsPanel() {
           {...searchableSetting("speech-silence-filtering")}
           title="Silence filtering"
           description={
-            destination.cloudProvider === "openai"
-              ? "OpenAI handles silence itself."
-              : "Skip silence and background noise before transcribing."
+            providerHandlesSilence ? (
+              <T>The selected provider handles silence automatically.</T>
+            ) : (
+              "Skip silence and background noise before transcribing."
+            )
           }
           control={
             <Switch
               aria-label="Silence filtering"
-              disabled={destination.cloudProvider === "openai"}
+              disabled={providerHandlesSilence}
               checked={settings.speechSilenceFiltering}
               onCheckedChange={(checked) =>
                 void updateClientSettings({ speechSilenceFiltering: checked })

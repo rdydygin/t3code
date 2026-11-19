@@ -8406,15 +8406,7 @@
     " med dikteringsåtkomst för att fortsätta."
   ],
   "1d33877ef8ea3559": "Försök läsa in API-nyckeln igen",
-  "be805c1729dc0726": [
-    "Uppdatera ",
-    {
-      "i": 1,
-      "k": "_gt_value_1",
-      "v": "v"
-    },
-    " för att använda diktering med OpenRouter."
-  ],
+  "3dd30ffe85110913": "Uppdatera den här miljön för att använda den här dikteringsleverantören.",
   "d7acad5dde4c1d1b": "Söker efter en API-nyckel…",
   "8257030da7a4ad4e": "Modell",
   "418d9b293a8983a9": [
@@ -11920,7 +11912,7 @@
   "d4b59565bd8b6d07": "Översätt till engelska",
   "0d88a0c771d98284": "Prata vilket språk som helst och få engelsk text.",
   "f4a8700049fc9dcc": "Tystnadsfiltrering",
-  "f22b17f6731c14c0": "OpenAI hanterar tystnad själv.",
+  "cc734cd1fbf039fd": "Den valda leverantören hanterar tystnad automatiskt.",
   "75a3001ae4561b97": "Hoppa över tystnad och bakgrundsljud före transkriberingen.",
   "adde9666f7fb8c5d": "Ta bort utfyllnadsord",
   "943ea47b1df48f12": "Ta bort ”öh” och ”ehm” från transkriptioner.",
@@ -12158,7 +12150,7 @@
   "fea2dc36585c4a20": "Simlock-enhetsvärdar (alfa)",
   "9d834d178130180e": "beta alpha simlock callstack simulator emulator ios android pool lån gateway",
   "bcb520297a9ae143": "beta snabb worktree utcheckning klon apfs copy-on-write cache macos hastighet",
-  "4c83ac419da342bd": "skicka mikrofonljud diktering mål tal röst stt transkribering miljö dator samtycke integritet moln OpenAI Grok OpenRouter",
+  "a22acd055e743c22": "skicka mikrofonljud diktering mål tal röst stt transkribering miljö dator samtycke integritet moln OpenAI Grok Groq OpenRouter",
   "f9c000e92379d027": "mikrofon indata ljud enhet ordning prioritet föredragen",
   "22811f405e0b4b28": "tal röst tangentbord snabbtangent håll växla auto",
   "e27bccf50397d9fe": "tal röst översätt engelska identifiera automatiskt",

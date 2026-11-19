@@ -1,6 +1,4 @@
 {
-  "3dd30ffe85110913": "Update this environment to use this dictation provider.",
-  "5881374f1ba3ada5": "The selected provider handles silence automatically.",
   "23be753133ae6950": "Thread",
   "0001ae5846061bb6": "Thread on {machine}",
   "eef7f4dacbc3c3f2": "Machine",
@@ -8410,15 +8408,7 @@
     " with dictation access to continue."
   ],
   "1d33877ef8ea3559": "Retry loading API key",
-  "be805c1729dc0726": [
-    "Update ",
-    {
-      "i": 1,
-      "k": "_gt_value_1",
-      "v": "v"
-    },
-    " to use OpenRouter dictation."
-  ],
+  "3dd30ffe85110913": "Update this environment to use this dictation provider.",
   "d7acad5dde4c1d1b": "Checking for an API key…",
   "8257030da7a4ad4e": "Model",
   "418d9b293a8983a9": [
@@ -11924,7 +11914,7 @@
   "d4b59565bd8b6d07": "Translate to English",
   "0d88a0c771d98284": "Speak any language and get English text.",
   "f4a8700049fc9dcc": "Silence filtering",
-  "f22b17f6731c14c0": "OpenAI handles silence itself.",
+  "cc734cd1fbf039fd": "The selected provider handles silence automatically.",
   "75a3001ae4561b97": "Skip silence and background noise before transcribing.",
   "adde9666f7fb8c5d": "Remove filler words",
   "943ea47b1df48f12": "Drop “um” and “uh” from transcripts.",
@@ -12162,7 +12152,7 @@
   "fea2dc36585c4a20": "Simlock device hosts (alpha)",
   "9d834d178130180e": "beta alpha simlock callstack simulator emulator ios android pool lease gateway",
   "bcb520297a9ae143": "beta fast worktree checkout clone apfs copy-on-write cache macos speed",
-  "4c83ac419da342bd": "send microphone audio dictation destination speech voice stt transcription environment machine consent privacy cloud OpenAI Grok OpenRouter",
+  "a22acd055e743c22": "send microphone audio dictation destination speech voice stt transcription environment machine consent privacy cloud OpenAI Grok Groq OpenRouter",
   "f9c000e92379d027": "mic input audio device order priority preferred",
   "22811f405e0b4b28": "speech voice keyboard hotkey hold toggle auto",
   "e27bccf50397d9fe": "speech voice translate english auto detect",

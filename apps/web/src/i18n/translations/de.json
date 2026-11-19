@@ -1,6 +1,4 @@
 {
-  "3dd30ffe85110913": "Aktualisiere diese Umgebung, um diesen Diktieranbieter zu verwenden.",
-  "5881374f1ba3ada5": "Der ausgewählte Anbieter verarbeitet Sprechpausen automatisch.",
   "23be753133ae6950": "Thread",
   "0001ae5846061bb6": "Thread auf {machine}",
   "eef7f4dacbc3c3f2": "Rechner",
@@ -8406,15 +8404,7 @@
     ", um fortzufahren."
   ],
   "1d33877ef8ea3559": "Laden des API-Schlüssels wiederholen",
-  "be805c1729dc0726": [
-    "Aktualisiere ",
-    {
-      "i": 1,
-      "k": "_gt_value_1",
-      "v": "v"
-    },
-    ", um OpenRouter-Diktat zu nutzen."
-  ],
+  "3dd30ffe85110913": "Aktualisiere diese Umgebung, um diesen Diktieranbieter zu verwenden.",
   "d7acad5dde4c1d1b": "Es wird nach einem API-Schlüssel gesucht…",
   "8257030da7a4ad4e": "Modell",
   "418d9b293a8983a9": [
@@ -11917,7 +11907,7 @@
   "d4b59565bd8b6d07": "Ins Englische übersetzen",
   "0d88a0c771d98284": "Sprich in beliebiger Sprache und erhalte englischen Text.",
   "f4a8700049fc9dcc": "Stillefilter",
-  "f22b17f6731c14c0": "OpenAI handhabt Stille selbst.",
+  "cc734cd1fbf039fd": "Der ausgewählte Anbieter verarbeitet Sprechpausen automatisch.",
   "75a3001ae4561b97": "Stille und Hintergrundgeräusche vor dem Transkribieren überspringen.",
   "adde9666f7fb8c5d": "Füllwörter entfernen",
   "943ea47b1df48f12": "„Äh“ und „ähm“ aus Transkripten entfernen.",
@@ -12156,7 +12146,7 @@
   "fea2dc36585c4a20": "Simlock-Geräte-Hosts (Alpha)",
   "9d834d178130180e": "beta alpha simlock callstack simulator emulator ios android pool lease gateway",
   "bcb520297a9ae143": "beta schneller worktree checkout klonen apfs copy-on-write cache macos geschwindigkeit",
-  "4c83ac419da342bd": "mikrofon audio senden diktat ziel sprache spracheingabe stt transkription umgebung rechner einwilligung datenschutz cloud OpenAI Grok OpenRouter",
+  "a22acd055e743c22": "mikrofon audio senden diktat ziel sprache spracheingabe stt transkription umgebung rechner einwilligung datenschutz cloud OpenAI Grok Groq OpenRouter",
   "f9c000e92379d027": "mikrofon eingabe audio gerät reihenfolge priorität bevorzugt",
   "22811f405e0b4b28": "sprache spracheingabe tastatur hotkey halten umschalten auto",
   "e27bccf50397d9fe": "sprache spracheingabe übersetzen englisch automatisch erkennen",

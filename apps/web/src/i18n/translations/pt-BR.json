@@ -1,6 +1,4 @@
 {
-  "3dd30ffe85110913": "Atualize este ambiente para usar este provedor de ditado.",
-  "5881374f1ba3ada5": "O provedor selecionado processa automaticamente os trechos de silêncio.",
   "23be753133ae6950": "Thread",
   "0001ae5846061bb6": "Thread em {machine}",
   "eef7f4dacbc3c3f2": "Máquina",
@@ -8402,15 +8400,7 @@
     " com acesso ao ditado para continuar."
   ],
   "1d33877ef8ea3559": "Tentar carregar a chave de API novamente",
-  "be805c1729dc0726": [
-    "Atualize ",
-    {
-      "i": 1,
-      "k": "_gt_value_1",
-      "v": "v"
-    },
-    " para usar o ditado do OpenRouter."
-  ],
+  "3dd30ffe85110913": "Atualize este ambiente para usar este provedor de ditado.",
   "d7acad5dde4c1d1b": "Verificando se há uma chave de API…",
   "8257030da7a4ad4e": "Modelo",
   "418d9b293a8983a9": [
@@ -11913,7 +11903,7 @@
   "d4b59565bd8b6d07": "Traduzir para o inglês",
   "0d88a0c771d98284": "Fale em qualquer idioma e receba texto em inglês.",
   "f4a8700049fc9dcc": "Filtragem de silêncio",
-  "f22b17f6731c14c0": "A OpenAI trata o silêncio por conta própria.",
+  "cc734cd1fbf039fd": "O provedor selecionado processa automaticamente os trechos de silêncio.",
   "75a3001ae4561b97": "Ignora o silêncio e o ruído de fundo antes de transcrever.",
   "adde9666f7fb8c5d": "Remover palavras de preenchimento",
   "943ea47b1df48f12": "Remove “hã” e “é…” das transcrições.",
@@ -12151,7 +12141,7 @@
   "fea2dc36585c4a20": "Hosts de dispositivos Simlock (alfa)",
   "9d834d178130180e": "beta alpha simlock callstack simulador emulador ios android pool lease gateway",
   "bcb520297a9ae143": "beta rápido worktree checkout clonar apfs copy-on-write cache macos velocidade",
-  "4c83ac419da342bd": "enviar áudio do microfone ditado destino fala voz stt transcrição ambiente máquina consentimento privacidade nuvem OpenAI Grok OpenRouter",
+  "a22acd055e743c22": "enviar áudio do microfone ditado destino fala voz stt transcrição ambiente máquina consentimento privacidade nuvem OpenAI Grok Groq OpenRouter",
   "f9c000e92379d027": "microfone entrada áudio dispositivo ordem prioridade preferido",
   "22811f405e0b4b28": "fala voz teclado atalho manter pressionado alternar automático",
   "e27bccf50397d9fe": "fala voz traduzir inglês detectar automaticamente",

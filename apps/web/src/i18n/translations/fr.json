@@ -1,6 +1,4 @@
 {
-  "3dd30ffe85110913": "Mettez à jour cet environnement pour utiliser ce fournisseur de dictée.",
-  "5881374f1ba3ada5": "Le fournisseur sélectionné gère automatiquement les silences.",
   "23be753133ae6950": "Fil",
   "0001ae5846061bb6": "Fil sur {machine}",
   "eef7f4dacbc3c3f2": "Machine",
@@ -8403,15 +8401,7 @@
     " avec l’accès à la dictée pour continuer."
   ],
   "1d33877ef8ea3559": "Réessayer de charger la clé API",
-  "be805c1729dc0726": [
-    "Mettez à jour ",
-    {
-      "i": 1,
-      "k": "_gt_value_1",
-      "v": "v"
-    },
-    " pour utiliser la dictée OpenRouter."
-  ],
+  "3dd30ffe85110913": "Mettez à jour cet environnement pour utiliser ce fournisseur de dictée.",
   "d7acad5dde4c1d1b": "Recherche d’une clé API…",
   "8257030da7a4ad4e": "Modèle",
   "418d9b293a8983a9": [
@@ -11914,7 +11904,7 @@
   "d4b59565bd8b6d07": "Traduire en anglais",
   "0d88a0c771d98284": "Parlez dans n’importe quelle langue et obtenez du texte en anglais.",
   "f4a8700049fc9dcc": "Filtrage du silence",
-  "f22b17f6731c14c0": "OpenAI gère lui-même le silence.",
+  "cc734cd1fbf039fd": "Le fournisseur sélectionné gère automatiquement les silences.",
   "75a3001ae4561b97": "Ignore le silence et le bruit de fond avant la transcription.",
   "adde9666f7fb8c5d": "Supprimer les mots de remplissage",
   "943ea47b1df48f12": "Retire les « euh » et « hum » des transcriptions.",
@@ -12152,7 +12142,7 @@
   "fea2dc36585c4a20": "Hôtes d’appareils Simlock (alpha)",
   "9d834d178130180e": "bêta alpha simlock callstack simulateur émulateur ios android pool bail passerelle",
   "bcb520297a9ae143": "bêta rapide worktree extraction clone apfs copie sur écriture cache macos vitesse",
-  "4c83ac419da342bd": "envoyer microphone audio dictée destination parole voix stt transcription environnement machine consentement confidentialité cloud OpenAI Grok OpenRouter",
+  "a22acd055e743c22": "envoyer microphone audio dictée destination parole voix stt transcription environnement machine consentement confidentialité cloud OpenAI Grok Groq OpenRouter",
   "f9c000e92379d027": "micro entrée audio appareil ordre priorité préféré",
   "22811f405e0b4b28": "parole voix clavier raccourci maintenir basculer auto",
   "e27bccf50397d9fe": "parole voix traduire anglais détection auto",
